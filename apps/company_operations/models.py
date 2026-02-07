@@ -200,3 +200,16 @@ class ProjectUser(models.Model):
     def __str__(self):
         return f"{self.company_user.user.email} → {self.project.name}"
 
+# -----------------------------------
+# TEST PLANNING FEATURE FLAGS
+# -----------------------------------
+
+test_planning_enabled = models.BooleanField(
+    default=False,
+    help_text="Enable Test Planning engine for this project",
+)
+
+template_needs_approval = models.BooleanField(
+    default=False,
+    help_text="Require template approval workflow before activation",
+)
