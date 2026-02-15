@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "apps.test_plan",
 
     # custom auth implementation
     "apps.company_auth.apps.CompanyAuthConfig",

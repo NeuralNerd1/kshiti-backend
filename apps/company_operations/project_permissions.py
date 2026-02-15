@@ -28,6 +28,22 @@ CAN_VIEW_REPORTS = "can_view_reports"
 CAN_CAPTURE_ELEMENTS = "can_capture_elements"
 
 # =====================================================
+# FEATURE 4 — TEST PLAN PERMISSIONS
+# =====================================================
+
+CAN_CREATE_TEMPLATES = "can_create_templates"
+CAN_EDIT_TEMPLATES = "can_edit_templates"
+CAN_SUBMIT_TEMPLATES = "can_submit_templates"
+CAN_APPROVE_TEMPLATES = "can_approve_templates"
+
+CAN_CREATE_PLANNING_ITEMS = "can_create_planning_items"
+CAN_EDIT_PLANNING_ITEMS = "can_edit_planning_items"
+CAN_REVIEW_PLANNING_ITEMS = "can_review_planning_items"
+CAN_BIND_EXECUTION = "can_bind_execution"
+CAN_TRACK_TIME = "can_track_time"
+
+
+# =====================================================
 # CANONICAL PROJECT PERMISSION SET
 # =====================================================
 
@@ -55,4 +71,14 @@ PROJECT_PERMISSION_KEYS = {
     CAN_VIEW_REPORTS,
 
     CAN_CAPTURE_ELEMENTS,
+
+    CAN_CREATE_TEMPLATES,
+    CAN_EDIT_TEMPLATES,
+    CAN_SUBMIT_TEMPLATES,
+    CAN_APPROVE_TEMPLATES,
+    CAN_CREATE_PLANNING_ITEMS,
+    CAN_EDIT_PLANNING_ITEMS,
+    CAN_REVIEW_PLANNING_ITEMS,
+    CAN_BIND_EXECUTION,
+    CAN_TRACK_TIME,
 }

@@ -24,6 +24,15 @@ def bootstrap_project_access(*, project, creator_company_user):
             "can_use_builder": True,
             "can_execute_tests": True,
             "can_view_reports": True,
+            "can_create_templates": True,
+        "can_edit_templates": True,
+        "can_submit_templates": True,
+        "can_approve_templates": True,
+        "can_create_planning_items": True,
+        "can_edit_planning_items": True,
+        "can_review_planning_items": True,
+        "can_bind_execution": True,
+        "can_track_time": True,
         },
     )
 

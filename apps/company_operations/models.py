@@ -103,6 +103,21 @@ class Project(models.Model):
 
     element_capture_enabled = models.BooleanField(default=True)
 
+        # =====================================================
+    # FEATURE 4 — TEST PLAN ENGINE FLAGS (NEW, ADDITIVE)
+    # =====================================================
+
+    test_planning_enabled = models.BooleanField(
+        default=False,
+        help_text="Enable Test Planning module for this project.",
+    )
+
+    template_needs_approval = models.BooleanField(
+        default=False,
+        help_text="Require template approval before activation.",
+    )
+
+
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -130,6 +145,8 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+    
+
     
 
 # =====================================================
@@ -200,16 +217,3 @@ class ProjectUser(models.Model):
     def __str__(self):
         return f"{self.company_user.user.email} → {self.project.name}"
 
-# -----------------------------------
-# TEST PLANNING FEATURE FLAGS
-# -----------------------------------
-
-test_planning_enabled = models.BooleanField(
-    default=False,
-    help_text="Enable Test Planning engine for this project",
-)
-
-template_needs_approval = models.BooleanField(
-    default=False,
-    help_text="Require template approval workflow before activation",
-)

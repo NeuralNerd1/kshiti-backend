@@ -267,6 +267,8 @@ class ProjectDetailView(APIView):
                 "builder_enabled": project.builder_enabled,
                 "execution_enabled": project.execution_enabled,
                 "reports_enabled": project.reports_enabled,
+                "test_planning_enabled": project.test_planning_enabled,
+                "template_needs_approval": project.template_needs_approval,
 
                 # Project-scoped permissions (UI authority)
                 "permissions": project_user.role.permissions_json,
