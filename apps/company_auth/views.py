@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from .serializers import PasswordResetSerializer
+from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from .models import Company
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -145,4 +146,32 @@ class CompanyBootstrapListView(APIView):
         companies = Company.objects.all().order_by("name")
         serializer = CompanyPublicSerializer(companies, many=True)
         return Response(serializer.data)
+
+
+class CompanyProjectsPublicView(APIView):
+    """
+    Public API for listing active projects of a company.
+    Used by the browser extension to allow project selection before login.
+    Returns minimal data only: id, name, element_capture_enabled.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, slug):
+        from apps.company_operations.models import Project
+
+        company = get_object_or_404(Company, slug=slug)
+        projects = Project.objects.filter(
+            company=company,
+            status=Project.STATUS_ACTIVE,
+        ).order_by("name")
+
+        return Response([
+            {
+                "id": p.id,
+                "name": p.name,
+                "element_capture_enabled": p.element_capture_enabled,
+            }
+            for p in projects
+        ])
 

@@ -5,14 +5,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
 from apps.company_operations.models import Project
-from apps.company_operations.services.project_users import get_project_user
-from apps.test_plan.services.guards import ensure_test_planning_enabled
-
 from apps.test_plan.models import PlanningItem
-from apps.test_plan.serializers.planning_item import PlanningItemSerializer
+from apps.test_plan.serializers.planning_item import (
+    PlanningItemSerializer,
+    PlanningItemCreateSerializer,
+)
+
 from apps.test_plan.services.planning_item_service import (
     create_planning_item,
     update_planning_item,
+    delete_planning_item,
 )
 
 class PlanningItemCreateView(APIView):
@@ -21,11 +23,8 @@ class PlanningItemCreateView(APIView):
     def post(self, request, project_id):
 
         project = get_object_or_404(Project, id=project_id)
-        ensure_test_planning_enabled(project)
 
-        get_project_user(project, request.user)
-
-        serializer = PlanningItemSerializer(data=request.data)
+        serializer = PlanningItemCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         item = create_planning_item(
@@ -34,7 +33,10 @@ class PlanningItemCreateView(APIView):
             data=serializer.validated_data,
         )
 
-        return Response({"id": item.id}, status=status.HTTP_201_CREATED)
+        return Response(
+            PlanningItemSerializer(item).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 class PlanningItemListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -42,13 +44,8 @@ class PlanningItemListView(APIView):
     def get(self, request, project_id):
 
         project = get_object_or_404(Project, id=project_id)
-        ensure_test_planning_enabled(project)
 
-        get_project_user(project, request.user)
-
-        items = PlanningItem.objects.filter(project=project)\
-            .select_related("entity_type", "status", "owner")\
-            .prefetch_related("assigned_users")
+        items = PlanningItem.objects.filter(project=project)
 
         return Response(
             PlanningItemSerializer(items, many=True).data
@@ -59,55 +56,48 @@ class PlanningItemDetailView(APIView):
 
     def get(self, request, item_id):
 
-        item = get_object_or_404(
-            PlanningItem.objects.select_related("project"),
-            id=item_id
-        )
-
-        ensure_test_planning_enabled(item.project)
-        get_project_user(item.project, request.user)
+        item = get_object_or_404(PlanningItem, id=item_id)
 
         return Response(
             PlanningItemSerializer(item).data
         )
-
+    
 class PlanningItemUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, item_id):
 
-        item = get_object_or_404(
-            PlanningItem.objects.select_related("project"),
-            id=item_id
-        )
+        item = get_object_or_404(PlanningItem, id=item_id)
 
-        ensure_test_planning_enabled(item.project)
-        get_project_user(item.project, request.user)
-
-        serializer = PlanningItemSerializer(data=request.data)
+        serializer = PlanningItemCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         item = update_planning_item(
+            project=item.project,
             item=item,
+            user=request.user,
             data=serializer.validated_data,
         )
 
-        return Response({"id": item.id})
+        return Response(
+            PlanningItemSerializer(item).data
+        )
+
 
 class PlanningItemDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, item_id):
 
-        item = get_object_or_404(
-            PlanningItem.objects.select_related("project"),
-            id=item_id
+        item = get_object_or_404(PlanningItem, id=item_id)
+
+        delete_planning_item(
+            project=item.project,
+            item=item,
+            user=request.user,
         )
 
-        ensure_test_planning_enabled(item.project)
-        get_project_user(item.project, request.user)
-
-        item.delete()
-
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 
