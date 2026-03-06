@@ -58,7 +58,9 @@ SECURE_SSL_REDIRECT = True
 # When you deploy the external app, add its origin here:
 CORS_ALLOWED_ORIGINS = [
     "https://kshiti.io",
+    "https://www.kshiti.io",
     "https://app.kshiti.io",
+    "http://localhost:3000",
     # "https://exec.kshiti.io",  # ← uncomment when external app is deployed
 ]
 
