@@ -92,3 +92,35 @@ class AuthAuditLog(models.Model):
     action = models.CharField(max_length=100)
     timestamp = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(null=True, blank=True)
+
+
+class UserProfile(models.Model):
+    """
+    Optional extended profile for a company user.
+    Stores avatar and display name (overrides email in the UI).
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+
+    display_name = models.CharField(max_length=150, blank=True)
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        null=True,
+        blank=True,
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def avatar_url(self, request=None):
+        """Return absolute avatar URL or None."""
+        if not self.avatar:
+            return None
+        if request:
+            return request.build_absolute_uri(self.avatar.url)
+        return self.avatar.url
+
+    def __str__(self):
+        return f"Profile({self.user.email})"

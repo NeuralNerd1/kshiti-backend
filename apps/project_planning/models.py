@@ -286,6 +286,9 @@ class TestCase(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
 
+    # stores a list of lowercase tag strings, e.g. ["smoke", "auth", "regression"]
+    tags = models.JSONField(default=list, blank=True)
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -337,6 +340,199 @@ class TestCaseVersion(models.Model):
 
     def __str__(self):
         return f"{self.test_case.name} v{self.version_number}"
+
+# ---------------------------------------------------------
+# TEST SUITE (PRIVATE TO CREATOR)
+# ---------------------------------------------------------
+
+class TestSuite(models.Model):
+    STATUS_ACTIVE = "ACTIVE"
+    STATUS_ARCHIVED = "ARCHIVED"
+
+    STATUS_CHOICES = (
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_ARCHIVED, "Archived"),
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="test_suites",
+    )
+
+    owner = models.ForeignKey(
+        "auth.User",
+        on_delete=models.CASCADE,
+        related_name="test_suites",
+    )
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+
+    tags = models.JSONField(default=list, blank=True)
+    test_case_ids = models.JSONField(default=list, blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_ACTIVE,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+# ---------------------------------------------------------
+# LOCAL TEST CASE FOLDER (PRIVATE TO CREATOR)
+# ---------------------------------------------------------
+
+class LocalTestCaseFolder(models.Model):
+    STATUS_ACTIVE = "ACTIVE"
+    STATUS_ARCHIVED = "ARCHIVED"
+
+    STATUS_CHOICES = (
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_ARCHIVED, "Archived"),
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="local_test_case_folders",
+    )
+
+    owner = models.ForeignKey(
+        "auth.User",
+        on_delete=models.CASCADE,
+        related_name="local_test_case_folders",
+    )
+
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="children",
+    )
+
+    name = models.CharField(max_length=255)
+    path = models.TextField()
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_ACTIVE,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["path"]
+
+    def __str__(self):
+        return self.path
+
+
+# ---------------------------------------------------------
+# LOCAL TEST CASE (PRIVATE TO CREATOR)
+# ---------------------------------------------------------
+
+class LocalTestCase(models.Model):
+    STATUS_DRAFT = "DRAFT"
+    STATUS_SAVED = "SAVED"
+    STATUS_ARCHIVED = "ARCHIVED"
+
+    STATUS_CHOICES = (
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_SAVED, "Saved"),
+        (STATUS_ARCHIVED, "Archived"),
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="local_test_cases",
+    )
+
+    owner = models.ForeignKey(
+        "auth.User",
+        on_delete=models.CASCADE,
+        related_name="local_test_cases",
+    )
+
+    folder = models.ForeignKey(
+        LocalTestCaseFolder,
+        on_delete=models.PROTECT,
+        related_name="test_cases",
+    )
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+
+    tags = models.JSONField(default=list, blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
+    )
+
+    current_version = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def archive(self):
+        self.status = self.STATUS_ARCHIVED
+        self.save(update_fields=["status", "updated_at"])
+
+    def __str__(self):
+        return self.name
+
+
+# ---------------------------------------------------------
+# LOCAL TEST CASE VERSION (IMMUTABLE)
+# ---------------------------------------------------------
+
+class LocalTestCaseVersion(models.Model):
+    test_case = models.ForeignKey(
+        LocalTestCase,
+        on_delete=models.CASCADE,
+        related_name="versions",
+    )
+
+    version_number = models.PositiveIntegerField()
+
+    pre_conditions_json = models.JSONField(default=list)
+    steps_json = models.JSONField(default=list)
+    expected_outcomes_json = models.JSONField(default=list)
+
+    created_from_version = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-version_number"]
+        unique_together = ("test_case", "version_number")
+
+    def __str__(self):
+        return f"{self.test_case.name} v{self.version_number}"
+
 
 # apps/project_planning/models.py
 
@@ -471,4 +667,73 @@ class ElementLocator(models.Model):
 
     def __str__(self):
         return f"{self.selector_type}"
+# ---------------------------------------------------------
+# TEST CASE IDENTITY (SHARED ID GENERATOR)
+# ---------------------------------------------------------
 
+class TestCaseIdentity(models.Model):
+    TYPE_GLOBAL = "GLOBAL"
+    TYPE_LOCAL = "LOCAL"
+
+    TYPE_CHOICES = (
+        (TYPE_GLOBAL, "Global"),
+        (TYPE_LOCAL, "Local"),
+    )
+
+    id = models.AutoField(primary_key=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="test_case_identities",
+    )
+    type = models.CharField(
+        max_length=10,
+        choices=TYPE_CHOICES,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def perform_backfill(cls, project=None):
+        """Creates identity records for existing test cases, optionally filtered by project."""
+        # Backfill Globals
+        tc_qs = TestCase.objects.all().values_list('id', 'project_id')
+        if project:
+            tc_qs = tc_qs.filter(project=project)
+            
+        new_globals = [
+            cls(id=tc_id, project_id=proj_id, type=cls.TYPE_GLOBAL)
+            for tc_id, proj_id in tc_qs
+        ]
+        if new_globals:
+            cls.objects.bulk_create(new_globals, ignore_conflicts=True)
+                
+        # Backfill Locals
+        ltc_qs = LocalTestCase.objects.all().values_list('id', 'project_id')
+        if project:
+            ltc_qs = ltc_qs.filter(project=project)
+            
+        new_locals = [
+            cls(id=ltc_id, project_id=proj_id, type=cls.TYPE_LOCAL)
+            for ltc_id, proj_id in ltc_qs
+        ]
+        if new_locals:
+            cls.objects.bulk_create(new_locals, ignore_conflicts=True)
+
+    @classmethod
+    def get_next_id(cls, project, identity_type):
+        """Creates a new identity record and returns the ID, ensuring no conflicts."""
+        # If this is the first time, or sequence is behind, jump it
+        max_tc = TestCase.objects.all().aggregate(m=models.Max("id"))["m"] or 0
+        max_ltc = LocalTestCase.objects.all().aggregate(m=models.Max("id"))["m"] or 0
+        max_ident = cls.objects.all().aggregate(m=models.Max("id"))["m"] or 0
+        
+        highest = max(max_tc, max_ltc, max_ident)
+        
+        # We use a loop just in case multiple threads are creating at once
+        # though transaction.atomic would be better for high load.
+        target_id = highest + 1
+        identity = cls.objects.create(id=target_id, project=project, type=identity_type)
+        return identity.id
+
+    class Meta:
+        verbose_name_plural = "Test Case Identities"

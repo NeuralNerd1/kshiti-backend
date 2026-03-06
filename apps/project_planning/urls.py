@@ -84,5 +84,13 @@ path(
     "elements/",
     include("apps.project_planning.elements.urls"),
 ),
+path(
+    "local-test-cases/",
+    include("apps.project_planning.test_cases.urls_local_test_cases"),
+),
+path(
+    "test-suites/",
+    include("apps.project_planning.test_cases.urls_test_suites"),
+),
 
 ]

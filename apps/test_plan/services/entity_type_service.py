@@ -76,11 +76,36 @@ def update_entity_type(*, project, entity_type, user, data):
         ).exclude(id=entity_type.id).exists():
             raise ValidationError("internal_key must be unique.")
 
+    # Capture old display_name before applying changes
+    old_display_name = entity_type.display_name
+
     for field, value in data.items():
         setattr(entity_type, field, value)
 
     entity_type.save()
+
+    # Cascade rename: update EntityFieldDefinition.display_name across this
+    # template wherever the old entity name appears as a word in the label.
+    new_display_name = entity_type.display_name
+    if "display_name" in data and old_display_name != new_display_name:
+        import re
+        all_entity_ids = template.entity_types.values_list("id", flat=True)
+        related_fields = EntityFieldDefinition.objects.filter(
+            entity_type_id__in=all_entity_ids,
+        )
+        for field_def in related_fields:
+            # Replace whole-word occurrences of the old name (case-sensitive)
+            updated = re.sub(
+                r'\b' + re.escape(old_display_name) + r'\b',
+                new_display_name,
+                field_def.display_name,
+            )
+            if updated != field_def.display_name:
+                field_def.display_name = updated
+                field_def.save(update_fields=["display_name"])
+
     return entity_type
+
 
 @transaction.atomic
 def delete_entity_type(*, project, entity_type, user):

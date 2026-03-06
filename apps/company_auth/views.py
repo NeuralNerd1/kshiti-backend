@@ -101,6 +101,8 @@ class SessionView(APIView):
                 "email": user.email,
                 "company_id": company.id,
                 "company_slug": company.slug,
+                "display_name": _get_display_name(user),
+                "avatar_url": _get_avatar_url(user, request),
             },
             status=status.HTTP_200_OK,
         )
@@ -175,3 +177,96 @@ class CompanyProjectsPublicView(APIView):
             for p in projects
         ])
 
+
+# ---------------------------------------------------------------------------
+# Helpers for profile data
+# ---------------------------------------------------------------------------
+
+def _get_display_name(user):
+    try:
+        name = user.profile.display_name
+        return name if name else user.email
+    except Exception:
+        return user.email
+
+
+def _get_avatar_url(user, request=None):
+    try:
+        return user.profile.avatar_url(request)
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Profile views
+# ---------------------------------------------------------------------------
+
+class UserProfileView(APIView):
+    """
+    GET  /auth/profile/  — returns current user profile
+    PATCH /auth/profile/ — updates display_name
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "email": user.email,
+            "display_name": _get_display_name(user),
+            "avatar_url": _get_avatar_url(user, request),
+        })
+
+    def patch(self, request):
+        from .models import UserProfile
+        user = request.user
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        display_name = request.data.get("display_name", "").strip()
+        profile.display_name = display_name
+        profile.save(update_fields=["display_name", "updated_at"])
+        return Response({
+            "display_name": _get_display_name(user),
+            "avatar_url": _get_avatar_url(user, request),
+        })
+
+
+class AvatarUploadView(APIView):
+    """
+    POST   /auth/profile/avatar/ — uploads avatar image (multipart/form-data)
+    DELETE /auth/profile/avatar/ — removes avatar
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from .models import UserProfile
+        user = request.user
+        avatar_file = request.FILES.get("avatar")
+        if not avatar_file:
+            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+        if avatar_file.content_type not in allowed:
+            return Response({"error": "Unsupported file type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        if profile.avatar:
+            profile.avatar.delete(save=False)
+        profile.avatar = avatar_file
+        profile.save(update_fields=["avatar", "updated_at"])
+        return Response({
+            "avatar_url": _get_avatar_url(user, request),
+        })
+
+    def delete(self, request):
+        from .models import UserProfile
+        user = request.user
+        try:
+            profile = user.profile
+            if profile.avatar:
+                profile.avatar.delete(save=False)
+                profile.avatar = None
+                profile.save(update_fields=["avatar", "updated_at"])
+        except Exception:
+            pass
+        return Response({"avatar_url": None})

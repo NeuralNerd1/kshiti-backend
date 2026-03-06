@@ -55,6 +55,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.test_plan",
 
+    # cross-app bridge
+    "apps.bridge",
+
     # custom auth implementation
     "apps.company_auth.apps.CompanyAuthConfig",
 ]
@@ -120,4 +123,16 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "/static/"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BRIDGE CONFIG
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared secret for machine-to-machine bridge calls (external app → this API).
+# Set BRIDGE_API_KEY in your environment/secrets manager.
+# Local:      any random string is fine for development.
+# Production: use a long, cryptographically-random secret.
+import os
+BRIDGE_API_KEY = os.environ.get("BRIDGE_API_KEY", "")

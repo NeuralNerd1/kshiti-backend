@@ -115,7 +115,9 @@ class SaveTestCaseBuilderAPI(APIView):
         )
 
         test_case.current_version = new_version_number
-        test_case.save(update_fields=["current_version"])
+        if new_version_number >= 1:
+            test_case.status = TestCase.STATUS_SAVED
+        test_case.save(update_fields=["current_version", "status"])
 
         # ----------------------------------
         # Success response (UNCHANGED)

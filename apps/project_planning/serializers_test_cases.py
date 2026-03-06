@@ -27,6 +27,7 @@ class TestCaseSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "tags",
             "status",
             "current_version",
             "folder",

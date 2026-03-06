@@ -1,0 +1,12 @@
+Auth Verify:
+1. http://localhost:8000/bridge/auth/verify/
+Authorization → Bearer token
+
+2. http://localhost:8000/bridge/auth/verify/
+header: X-Bridge-Api-Key → dev-bridge-secret-changeme
+{"user_id": 1}
+
+
+Project snapshot: 
+3. http://localhost:8000/bridge/project-snapshot/1/
+Authorization → Bearer token

@@ -6,44 +6,27 @@ CATEGORY_13 = {
     },
     "actions": [
         {
-            "action_key": "if_element_visible",
-            "action_name": "If Element Visible",
+            "action_key": "conditional_block",
+            "action_name": "Conditional Block",
+            "description": "Execute actions based on UI conditions with logical operators",
+            "is_risky": False,
             "schema": {
                 "required": {
-                    "selector_type": {"type": "string"},
-                    "selector_value": {"type": "string"},
+                    "conditions": {
+                        "type": "array",
+                        "description": "Array of condition objects with logical operators",
+                    },
+                    "if_true_actions": {
+                        "type": "array",
+                        "description": "Actions to execute if conditions evaluate to true",
+                    },
                 },
                 "optional": {
-                    "timeout_ms": {"type": "number"},
+                    "else_actions": {
+                        "type": "array",
+                        "description": "Actions to execute if conditions evaluate to false (optional)",
+                    },
                 },
-            },
-        },
-        {
-            "action_key": "if_text_equals",
-            "action_name": "If Text Equals",
-            "schema": {
-                "required": {
-                    "selector_type": {"type": "string"},
-                    "selector_value": {"type": "string"},
-                    "expected_text": {"type": "string"},
-                },
-                "optional": {},
-            },
-        },
-        {
-            "action_key": "else_block",
-            "action_name": "Else Block",
-            "schema": {
-                "required": {},
-                "optional": {},
-            },
-        },
-        {
-            "action_key": "end_if",
-            "action_name": "End If",
-            "schema": {
-                "required": {},
-                "optional": {},
             },
         },
     ],

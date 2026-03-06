@@ -74,4 +74,9 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS("Action Registry seeded successfully.")
         )
+        
+        # Clear cache after seeding
+        from django.core.cache import cache
+        from apps.planning_registry.services import ACTION_REGISTRY_CACHE_KEY
+        cache.delete(ACTION_REGISTRY_CACHE_KEY)
 

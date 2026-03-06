@@ -9,6 +9,7 @@ from apps.project_planning.models import (
     TestCase,
     TestCaseFolder,
     TestCaseVersion,
+    TestCaseIdentity,
 )
 
 from apps.project_planning.services.test_case_access import (
@@ -39,6 +40,12 @@ class CreateTestCaseAPI(APIView):
         folder_id = request.data.get("folder_id")
         name = request.data.get("name")
         description = request.data.get("description", "")
+        tags = request.data.get("tags", [])
+
+        # sanitise: ensure tags is a list of unique lowercase strings
+        if not isinstance(tags, list):
+            tags = []
+        tags = list({str(t).strip().lower() for t in tags if str(t).strip()})
 
         folder = get_object_or_404(TestCaseFolder, id=folder_id)
         project = folder.project
@@ -57,12 +64,19 @@ class CreateTestCaseAPI(APIView):
             )
 
         try:
+            # Generate unified ID
+            test_case_id = TestCaseIdentity.get_next_id(
+                project, TestCaseIdentity.TYPE_GLOBAL
+            )
+
             test_case = TestCase.objects.create(
+                id=test_case_id,
                 project=project,
                 folder=folder,
                 name=name,
                 description=description,
-                status=TestCase.STATUS_SAVED,
+                tags=tags,
+                status=TestCase.STATUS_DRAFT,
                 current_version=1,
             )
 
@@ -97,6 +111,7 @@ class ListTestCasesAPI(APIView):
 
     def get(self, request):
         project_id = request.query_params.get("project_id")
+        status_filter = request.query_params.get("status", "ALL")
 
         from apps.company_operations.models import Project
         project = get_object_or_404(Project, id=project_id)
@@ -114,9 +129,16 @@ class ListTestCasesAPI(APIView):
                 status_code=403,
             )
 
-        test_cases = TestCase.objects.filter(
-            project=project
-        ).select_related("folder")
+        test_cases = TestCase.objects.filter(project=project)
+        
+        if status_filter != "ALL":
+            test_cases = test_cases.filter(status=status_filter)
+        else:
+            # By default show everything except archived if not specified? 
+            # Or just show everything if ALL. The frontend handles ALL.
+            pass
+
+        test_cases = test_cases.select_related("folder")
 
         return Response(
             TestCaseSerializer(test_cases, many=True).data
@@ -216,7 +238,9 @@ class SaveTestCaseAPI(APIView):
         )
 
         test_case.current_version = new_version
-        test_case.save(update_fields=["current_version"])
+        if new_version >= 1:
+            test_case.status = TestCase.STATUS_SAVED
+        test_case.save(update_fields=["current_version", "status"])
 
         return Response(
             {"version": new_version},
