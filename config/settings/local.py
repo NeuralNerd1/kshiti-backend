@@ -3,9 +3,9 @@ import os
 from urllib.parse import urlparse
 from pathlib import Path
 
-# Load .env file from the backend root
+# Load .env.local file from the backend root for local development
 from dotenv import load_dotenv
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env.local", override=True)
 
 DEBUG = True
 

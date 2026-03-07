@@ -62,6 +62,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://app.kshiti.io",
     "http://localhost:3000",
     # "https://exec.kshiti.io",  # ← uncomment when external app is deployed
+    "https://planning.kshiti.io",
 ]
 
 # -----------------------------------
