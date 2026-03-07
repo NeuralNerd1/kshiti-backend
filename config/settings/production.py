@@ -66,6 +66,16 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # -----------------------------------
+# CSRF TRUSTED ORIGINS
+# -----------------------------------
+CSRF_TRUSTED_ORIGINS = [
+    "https://kshiti.io",
+    "https://www.kshiti.io",
+    "https://app.kshiti.io",
+    "https://planning.kshiti.io",
+]
+
+# -----------------------------------
 # BRIDGE API KEY (production)
 # -----------------------------------
 # Must be set as an environment variable / secret in your deployment.
