@@ -27,6 +27,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "https://kshiti.io",
     "https://www.kshiti.io",
+    "https://planning.kshiti.io",
 
 ]
 
